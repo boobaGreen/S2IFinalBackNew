@@ -1,0 +1,11 @@
+ok backend la verify me mail
+
+da sistemare fronte end miniamle function di confirmMail
+
+
+il sign up con mail trap temporaneo funziona , 
+ce anche la casistica di account gia' verificato
+non potra' mai piu' cambiare in pending quindi non serve timer
+
+oauth goole funziona!
+ora devo capire cosa registrare dei dati che arrivano come chiave primaria sul mio database
