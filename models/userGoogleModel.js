@@ -1,0 +1,31 @@
+const mongoose = require('mongoose');
+// const validator = require('validator');
+
+const googleUserSchema = new mongoose.Schema({
+  googleId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  userName: {
+    type: String,
+    required: [true, 'A user must have a name'],
+    minlength: 3,
+    maxlength: 30,
+  },
+  // email: {
+  //   type: String,
+  //   required: [true, 'Please provide email'],
+  //   unique: true,
+  //   lowercase: true,
+  //   validate: [validator.isEmail, 'Please provide a valid email'],
+  // },
+  photo: {
+    type: String, // Puoi anche usare un tipo di dato specifico per le immagini, ad esempio Buffer
+  },
+  // Altri campi specifici per gli utenti Google
+});
+
+const GoogleUser = mongoose.model('GoogleUser', googleUserSchema);
+
+module.exports = GoogleUser;

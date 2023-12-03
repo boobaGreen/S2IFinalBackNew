@@ -62,6 +62,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     select: false,
   },
+  // da aggiungere anche su userGoogle!!!!!!!!!!!!!!
   status: {
     type: String,
     enum: ['Pending', 'Active', 'Ban'],

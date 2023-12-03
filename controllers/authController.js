@@ -11,6 +11,7 @@ const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const sendEmail = require('../utils/email');
+const GoogleUser = require('../models/userGoogleModel');
 
 // Oauth Google function
 async function getUserData(accessToken) {
@@ -20,7 +21,8 @@ async function getUserData(accessToken) {
 
   //console.log('response',response);
   const data = await response.json();
-  console.log('data', data);
+  // console.log('data', data);
+  return data;
 }
 
 // CreateActiveAccountToken Function
@@ -45,31 +47,73 @@ const signToken = (_id) => {
 };
 
 //Create and send token function
-const createSendToken = (user, statusCode, res) => {
+// Modifica la firma della funzione per includere un parametro opzionale per la risposta (res) e per la richiesta (req)
+// const createSendToken = (user, statusCode, res, isGoogleAuth = false) => {
+//   // Crea il token JWT
+//   const token = signToken(user._id);
+
+//   // Opzioni del cookie
+//   const cookieOptions = {
+//     expires: new Date(
+//       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+//     ),
+//     httpOnly: true,
+//     // modifiche aggiunte temporanee x testare google auth da rivedere soprattuto deve prod
+//     domain: 'localhost',
+
+//     sameSite: 'none', // Aggiungi questa riga
+//     // fine modifiche relative a google auth
+//   };
+
+//   if (process.env.NODE_ENV === 'production') {
+//     cookieOptions.secure = true;
+//   }
+
+//   // Se è un'operazione di autenticazione Google, reindirizza l'utente
+//   if (isGoogleAuth) {
+//     res.redirect(303, 'http://localhost:4000/');
+//     return; // Termina l'esecuzione per evitare ulteriori invii di risposta
+//   }
+
+//   // Imposta il cookie JWT
+//   res.cookie('jwt', token, cookieOptions);
+
+//   // Rimuovi la password dalla risposta
+//   if (user.password) {
+//     user.password = undefined;
+//   }
+
+//   // Invia la risposta al frontend
+//   res.status(statusCode).json({
+//     status: 'success',
+//     token,
+//     data: {
+//       user,
+//     },
+//   });
+// };
+const createSendToken = (user, statusCode, res, isGoogleAuth = false) => {
+  // Crea il token JWT
   const token = signToken(user._id);
-  const cookieOptions = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
-    ),
-    httpOnly: true,
-    // sameSite: 'none',
-  };
 
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-  // if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  // Rimuovi la password dalla risposta
+  if (user.password) {
+    user.password = undefined;
+  }
 
-  res.cookie('jwt', token, cookieOptions);
-
-  // Remove password from output
-  user.password = undefined;
-
-  res.status(statusCode).json({
-    status: 'success',
-    token,
-    data: {
-      user,
-    },
-  });
+  // Se è un'operazione di autenticazione Google, reindirizza l'utente con il token nell'URL
+  if (isGoogleAuth) {
+    res.redirect(303, `http://localhost:4000/googleOauth/?token=${token}`);
+  } else {
+    // Altrimenti, invia il token nel corpo della risposta JSON
+    res.status(statusCode).json({
+      status: 'success',
+      token,
+      data: {
+        user,
+      },
+    });
+  }
 };
 // CONFIRM ACCOUNT FUNCTION
 const confirmAccount = (Model) =>
@@ -120,8 +164,8 @@ exports.requestUrlOgoogle = catchAsync(async (req, res, next) => {
 /* GET home page. */
 exports.oauth = catchAsync(async (req, res, next) => {
   const { code } = req.query;
-
   console.log(code);
+  let googleUser;
   try {
     const redirectURL = 'http://127.0.0.1:3005/api/v1/users/oauth';
     const oAuth2Client = new OAuth2Client(
@@ -133,14 +177,30 @@ exports.oauth = catchAsync(async (req, res, next) => {
     // Make sure to set the credentials on the OAuth2 client.
     await oAuth2Client.setCredentials(r.tokens);
     console.info('Tokens acquired.');
-    const user = oAuth2Client.credentials;
-    console.log('credentials', user);
-    await getUserData(oAuth2Client.credentials.access_token);
+    // const user = oAuth2Client.credentials;
+    // console.log('credentials', user.data);
+    googleUser = await getUserData(oAuth2Client.credentials.access_token);
+    const userFind = await GoogleUser.findOne({ googleId: googleUser.sub });
+    console.log(userFind);
+    let customGoogleUser = {};
+    if (!userFind) {
+      customGoogleUser = await GoogleUser.create({
+        googleId: googleUser.sub,
+        userName: googleUser.given_name,
+        photo: googleUser.picture,
+        // email: g.email,
+        //   // createSendToken(newUser, 201, res);
+      });
+      console.log('customGoogleUser : ', customGoogleUser);
+    } else {
+      console.log("utente gia' esistente");
+    }
+    createSendToken(customGoogleUser, 200, res, true);
   } catch (err) {
-    console.log('Error logging in with OAuth2 user', err);
+    return next(
+      new AppError('There was an unexpected error with google auth', 401),
+    );
   }
-
-  res.redirect(303, 'http://localhost:4000/');
 });
 
 exports.signup = catchAsync(async (req, res, next) => {
@@ -156,8 +216,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     activeToken,
     // createSendToken(newUser, 201, res);
   });
-  console.log('new user create and save: ', newUser); // *****************
-  const activeAccountURL = `http://127.0.0.1:4000/confirmAccount/${activeToken}`;
+  // console.log('new user create and save: ', newUser); // *****************
+  const activeAccountURL = `http://localhost:4000/confirmAccount/${activeToken}`;
   // const resetURL = `${req.protocol}://localhost:4600/confirmAccount/${token}`;
 
   // const resetURL = `http://127.0.0.1:4600/confirmAccount/${token}`;
