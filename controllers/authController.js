@@ -46,75 +46,52 @@ const signToken = (_id) => {
   });
 };
 
-//Create and send token function
+// Create and send token function
 // Modifica la firma della funzione per includere un parametro opzionale per la risposta (res) e per la richiesta (req)
-// const createSendToken = (user, statusCode, res, isGoogleAuth = false) => {
-//   // Crea il token JWT
-//   const token = signToken(user._id);
-
-//   // Opzioni del cookie
-//   const cookieOptions = {
-//     expires: new Date(
-//       Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
-//     ),
-//     httpOnly: true,
-//     // modifiche aggiunte temporanee x testare google auth da rivedere soprattuto deve prod
-//     domain: 'localhost',
-
-//     sameSite: 'none', // Aggiungi questa riga
-//     // fine modifiche relative a google auth
-//   };
-
-//   if (process.env.NODE_ENV === 'production') {
-//     cookieOptions.secure = true;
-//   }
-
-//   // Se è un'operazione di autenticazione Google, reindirizza l'utente
-//   if (isGoogleAuth) {
-//     res.redirect(303, 'http://localhost:4000/');
-//     return; // Termina l'esecuzione per evitare ulteriori invii di risposta
-//   }
-
-//   // Imposta il cookie JWT
-//   res.cookie('jwt', token, cookieOptions);
-
-//   // Rimuovi la password dalla risposta
-//   if (user.password) {
-//     user.password = undefined;
-//   }
-
-//   // Invia la risposta al frontend
-//   res.status(statusCode).json({
-//     status: 'success',
-//     token,
-//     data: {
-//       user,
-//     },
-//   });
-// };
 const createSendToken = (user, statusCode, res, isGoogleAuth = false) => {
   // Crea il token JWT
   const token = signToken(user._id);
+
+  // Opzioni del cookie
+  const cookieOptions = {
+    expires: new Date(
+      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    ),
+    httpOnly: true,
+    // modifiche aggiunte temporanee x testare google auth da rivedere soprattuto deve prod
+    domain: 'localhost',
+    sameSite: 'none', // Aggiungi questa riga
+    // fine modifiche relative a google auth
+  };
+
+  if (process.env.NODE_ENV === 'production') {
+    cookieOptions.secure = true;
+  }
+
+  // Imposta il cookie JWT
+  res.cookie('jwt', token, cookieOptions);
+
+  // Se è un'operazione di autenticazione Google, reindirizza l'utente
+  if (isGoogleAuth) {
+    res.redirect(303, `http://localhost:4000/googleOauth?token=${token}`);
+    return; // Termina l'esecuzione per evitare ulteriori invii di risposta
+  }
 
   // Rimuovi la password dalla risposta
   if (user.password) {
     user.password = undefined;
   }
 
-  // Se è un'operazione di autenticazione Google, reindirizza l'utente con il token nell'URL
-  if (isGoogleAuth) {
-    res.redirect(303, `http://localhost:4000/googleOauth/?token=${token}`);
-  } else {
-    // Altrimenti, invia il token nel corpo della risposta JSON
-    res.status(statusCode).json({
-      status: 'success',
-      token,
-      data: {
-        user,
-      },
-    });
-  }
+  // Invia la risposta al frontend
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: {
+      user,
+    },
+  });
 };
+
 // CONFIRM ACCOUNT FUNCTION
 const confirmAccount = (Model) =>
   catchAsync(async (req, res, next) => {
@@ -177,8 +154,6 @@ exports.oauth = catchAsync(async (req, res, next) => {
     // Make sure to set the credentials on the OAuth2 client.
     await oAuth2Client.setCredentials(r.tokens);
     console.info('Tokens acquired.');
-    // const user = oAuth2Client.credentials;
-    // console.log('credentials', user.data);
     googleUser = await getUserData(oAuth2Client.credentials.access_token);
     const userFind = await GoogleUser.findOne({ googleId: googleUser.sub });
     console.log(userFind);
@@ -218,12 +193,7 @@ exports.signup = catchAsync(async (req, res, next) => {
   });
   // console.log('new user create and save: ', newUser); // *****************
   const activeAccountURL = `http://localhost:4000/confirmAccount/${activeToken}`;
-  // const resetURL = `${req.protocol}://localhost:4600/confirmAccount/${token}`;
 
-  // const resetURL = `http://127.0.0.1:4600/confirmAccount/${token}`;
-  // const resetURL = `${req.protocol}://${req.get(
-  //   'host',
-  // )}/api/v1/users/confirm/${token}`;
   const messageActive = `${activeAccountURL}\n`;
   const htmlActive = `<body><h1>S2I Quiz</h1><h2>Email Confirmation</h2>
   <h3>Hello ${newUser.userName} ! 🎈</h3>
