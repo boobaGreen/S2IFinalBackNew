@@ -25,6 +25,10 @@ const googleUserSchema = new mongoose.Schema({
   },
   // Altri campi specifici per gli utenti Google
 });
+googleUserSchema.methods.changedPasswordAfter = function () {
+  // False means NOT change
+  return false;
+};
 
 const GoogleUser = mongoose.model('GoogleUser', googleUserSchema);
 

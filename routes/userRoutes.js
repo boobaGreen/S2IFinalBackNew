@@ -7,7 +7,7 @@ const userController = require('../controllers/userController');
 const router = express.Router();
 
 router.get('/requestUrlOgoogle', authController.requestUrlOgoogle);
-router.get('/oauth', authController.oauth);
+router.get('/oauthGoogle', authController.oauthGoogle);
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
 router.get('/confirmAccount/:activeToken', authController.updateStatus);

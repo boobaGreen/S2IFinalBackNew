@@ -124,7 +124,7 @@ const confirmAccount = (Model) =>
 exports.requestUrlOgoogle = catchAsync(async (req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:4000');
   res.header('Referrer-Policy', 'no-referrer-when-downgrade');
-  const redirectUrl = 'http://127.0.0.1:3005/api/v1/users/oauth';
+  const redirectUrl = 'http://127.0.0.1:3005/api/v1/users/oauthGoogle';
   const oAuth2Client = new OAuth2Client(
     process.env.CLIENT_ID,
     process.env.CLIENT_SECRET,
@@ -139,12 +139,12 @@ exports.requestUrlOgoogle = catchAsync(async (req, res, next) => {
 });
 
 /* GET home page. */
-exports.oauth = catchAsync(async (req, res, next) => {
+exports.oauthGoogle = catchAsync(async (req, res, next) => {
   const { code } = req.query;
   console.log(code);
   let googleUser;
   try {
-    const redirectURL = 'http://127.0.0.1:3005/api/v1/users/oauth';
+    const redirectURL = 'http://127.0.0.1:3005/api/v1/users/oauthGoogle';
     const oAuth2Client = new OAuth2Client(
       process.env.CLIENT_ID,
       process.env.CLIENT_SECRET,
@@ -280,7 +280,10 @@ exports.protect = catchAsync(async (req, res, next) => {
   const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
   console.log('decoded', decoded);
   // 3) Check if user still exists
-  const currentUser = await User.findById(decoded._id);
+  let currentUser = await User.findById(decoded._id);
+  if (!currentUser) {
+    currentUser = await GoogleUser.findById(decoded._id);
+  }
   console.log('fresh user', currentUser);
   if (!currentUser) {
     return next(
