@@ -12,6 +12,10 @@ const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 // const questionRouter = require('./routes/questionRoutes');
 const userRouter = require('./routes/userRoutes');
+const schoolRouter = require('./routes/schoolRoutes');
+const masterRouter = require('./routes/masterRoutes');
+const courseRouter = require('./routes/courseRoutes');
+const groupRouter = require('./routes/groupRoutes');
 // const responseRouter = require('./routes/responseRoutes');
 
 const app = express();
@@ -74,6 +78,10 @@ app.use((req, res, next) => {
 
 // app.use('/api/v1/tours', tourRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/schools', schoolRouter);
+app.use('/api/v1/masters', masterRouter);
+app.use('/api/v1/courses', courseRouter);
+app.use('/api/v1/groups', groupRouter);
 // app.use('/api/v1/reviews', reviewRouter);
 
 // set route for all no match routes

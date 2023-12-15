@@ -31,6 +31,9 @@ exports.updateOne = (Model) =>
 
 exports.createOne = (Model) =>
   catchAsync(async (req, res, next) => {
+    if (Model === 'Group') {
+      console.log('group create section!!!!!!!!!!!!!!');
+    }
     const doc = await Model.create(req.body);
 
     res.status(201).json({
@@ -55,8 +58,9 @@ exports.getOne = (Model, popOptions) =>
 exports.getAll = (Model) =>
   catchAsync(async (req, res, next) => {
     // To allow for nested GET reviews on tour (small hack)
+    // eslint-disable-next-line prefer-const
     let filter = {};
-    if (req.params.tourId) filter = { tour: req.params.tourId };
+    // if (req.params.tourId) filter = { tour: req.params.tourId };
     // EXECUTE QUERY
     const features = new APIFeatures(Model.find(filter), req.query)
       .filter()

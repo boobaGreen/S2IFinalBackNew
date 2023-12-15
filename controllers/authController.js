@@ -167,10 +167,11 @@ exports.oauthGoogle = catchAsync(async (req, res, next) => {
         //   // createSendToken(newUser, 201, res);
       });
       console.log('customGoogleUser : ', customGoogleUser);
+      createSendToken(customGoogleUser, 200, res, true);
     } else {
       console.log("utente gia' esistente");
+      createSendToken(userFind, 200, res, true);
     }
-    createSendToken(customGoogleUser, 200, res, true);
   } catch (err) {
     return next(
       new AppError('There was an unexpected error with google auth', 401),
@@ -270,6 +271,7 @@ exports.protect = catchAsync(async (req, res, next) => {
     req.headers.authorization.startsWith('Bearer')
   ) {
     token = req.headers.authorization.split(' ')[1];
+    console.log('** token :', token);
   }
   if (!token) {
     return next(
@@ -284,6 +286,8 @@ exports.protect = catchAsync(async (req, res, next) => {
   if (!currentUser) {
     currentUser = await GoogleUser.findById(decoded._id);
   }
+  currentUser.type = currentUser instanceof GoogleUser ? 'google' : 'user';
+
   console.log('fresh user', currentUser);
   if (!currentUser) {
     return next(
@@ -317,6 +321,18 @@ exports.restrictTo = (...roles) => {
         new AppError('You do not have permission to perform this action', 403),
       );
     }
+    next();
+  };
+};
+
+exports.onlyFounder = () => {
+  return (req, res, next) => {
+    // roles  ["admin","mod","user"]  role="user"
+    console.log('req.body :', req.body);
+    console.log('req.user :', req.user);
+    // if (!req.body) {
+    //   return next(new AppError('No body', 403));
+    // }
     next();
   };
 };

@@ -23,6 +23,8 @@ exports.validateToken = (req, res) => {
     status: 'success',
     message: 'Token is valid',
     userName: req.user.userName, // Includi il nome utente nella risposta
+    role: req.user.role, // Includi il nome utente nella risposta
+    _id: req.user._id,
   });
 };
 

@@ -1,3 +1,4 @@
+//userGoogleModel.js
 const mongoose = require('mongoose');
 // const validator = require('validator');
 
@@ -22,6 +23,16 @@ const googleUserSchema = new mongoose.Schema({
   // },
   photo: {
     type: String, // Puoi anche usare un tipo di dato specifico per le immagini, ad esempio Buffer
+  },
+  role: {
+    type: String,
+    enum: ['user', 'mod', 'admin', 'tutor'],
+    default: 'admin',
+  },
+  status: {
+    type: String,
+    enum: ['Pending', 'Active', 'Ban'],
+    default: 'Active',
   },
   // Altri campi specifici per gli utenti Google
 });
