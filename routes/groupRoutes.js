@@ -21,6 +21,10 @@ router
   .delete(groupController.isFounder, groupController.deleteGroup);
 
 router
+  .route('/:id/chat')
+  .get(authController.protect, groupController.getGroupChat);
+
+router
   .route('/join/:id')
   .patch(groupController.joinTest, groupController.joinGroup);
 

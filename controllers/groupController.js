@@ -128,6 +128,32 @@ exports.createGroup = catchAsync(async (req, res, next) => {
     data: finalDoc,
   });
 });
+exports.getGroupChat = catchAsync(async (req, res, next) => {
+  const group = await Group.findById(req.params.id);
+
+  // Verifica che l'utente sia il fondatore o un partecipante del gruppo
+  if (
+    req.user.id !== group.founder.user.toString() &&
+    !group.participants.some(
+      (participant) => participant.user.toString() === req.user.id,
+    )
+  ) {
+    return next(
+      new AppError(
+        'You do not have permission to access the chat of this group',
+        403,
+      ),
+    );
+  }
+
+  // Invia solo il campo 'chat' del gruppo
+  res.status(200).json({
+    status: 'success',
+    data: {
+      chat: group.chat,
+    },
+  });
+});
 
 exports.deleteGroup = factory.deleteOne(Group);
 exports.getGroup = factory.getOne(Group);
